@@ -17,13 +17,18 @@ import type {
 
 import type {
   ChurnPoint,
+  CreativePick,
+  FinancialInstrument,
+  FinancialSummaryItem,
   GetChurnMetricsParams,
+  GetFinancialPricesParams,
   GetMrrTrendParams,
   GetRetentionCohortsParams,
   GetUserGrowthParams,
   HealthStatus,
   MetricsSummary,
   MrrPoint,
+  PricePoint,
   RetentionCohort,
   UserGrowthPoint,
   UserSegment
@@ -618,6 +623,326 @@ export function useGetUserSegments<TData = Awaited<ReturnType<typeof getUserSegm
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetUserSegmentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFinancialInstrumentsUrl = () => {
+
+
+
+
+  return `/api/financial/instruments`
+}
+
+/**
+ * @summary List all tracked financial instruments
+ */
+export const getFinancialInstruments = async ( options?: RequestInit): Promise<FinancialInstrument[]> => {
+
+  return customFetch<FinancialInstrument[]>(getGetFinancialInstrumentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFinancialInstrumentsQueryKey = () => {
+    return [
+    `/api/financial/instruments`
+    ] as const;
+    }
+
+
+export const getGetFinancialInstrumentsQueryOptions = <TData = Awaited<ReturnType<typeof getFinancialInstruments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialInstruments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinancialInstrumentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinancialInstruments>>> = ({ signal }) => getFinancialInstruments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinancialInstruments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFinancialInstrumentsQueryResult = NonNullable<Awaited<ReturnType<typeof getFinancialInstruments>>>
+export type GetFinancialInstrumentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all tracked financial instruments
+ */
+
+export function useGetFinancialInstruments<TData = Awaited<ReturnType<typeof getFinancialInstruments>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialInstruments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFinancialInstrumentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFinancialSummaryUrl = () => {
+
+
+
+
+  return `/api/financial/summary`
+}
+
+/**
+ * @summary Current price + 24h/7d/30d change for all instruments
+ */
+export const getFinancialSummary = async ( options?: RequestInit): Promise<FinancialSummaryItem[]> => {
+
+  return customFetch<FinancialSummaryItem[]>(getGetFinancialSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFinancialSummaryQueryKey = () => {
+    return [
+    `/api/financial/summary`
+    ] as const;
+    }
+
+
+export const getGetFinancialSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinancialSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinancialSummary>>> = ({ signal }) => getFinancialSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFinancialSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getFinancialSummary>>>
+export type GetFinancialSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current price + 24h/7d/30d change for all instruments
+ */
+
+export function useGetFinancialSummary<TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFinancialSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFinancialPricesUrl = (symbol: string,
+    params?: GetFinancialPricesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/financial/prices/${symbol}?${stringifiedParams}` : `/api/financial/prices/${symbol}`
+}
+
+/**
+ * @summary Historical OHLC price data for a symbol
+ */
+export const getFinancialPrices = async (symbol: string,
+    params?: GetFinancialPricesParams, options?: RequestInit): Promise<PricePoint[]> => {
+
+  return customFetch<PricePoint[]>(getGetFinancialPricesUrl(symbol,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFinancialPricesQueryKey = (symbol: string,
+    params?: GetFinancialPricesParams,) => {
+    return [
+    `/api/financial/prices/${symbol}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetFinancialPricesQueryOptions = <TData = Awaited<ReturnType<typeof getFinancialPrices>>, TError = ErrorType<unknown>>(symbol: string,
+    params?: GetFinancialPricesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialPrices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinancialPricesQueryKey(symbol,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinancialPrices>>> = ({ signal }) => getFinancialPrices(symbol,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: symbol !== null && symbol !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinancialPrices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFinancialPricesQueryResult = NonNullable<Awaited<ReturnType<typeof getFinancialPrices>>>
+export type GetFinancialPricesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Historical OHLC price data for a symbol
+ */
+
+export function useGetFinancialPrices<TData = Awaited<ReturnType<typeof getFinancialPrices>>, TError = ErrorType<unknown>>(
+ symbol: string,
+    params?: GetFinancialPricesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialPrices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFinancialPricesQueryOptions(symbol,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCreativePickUrl = () => {
+
+
+
+
+  return `/api/financial/creative-pick`
+}
+
+/**
+ * @summary AI-selected high-potential investment pick with analysis
+ */
+export const getCreativePick = async ( options?: RequestInit): Promise<CreativePick> => {
+
+  return customFetch<CreativePick>(getGetCreativePickUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCreativePickQueryKey = () => {
+    return [
+    `/api/financial/creative-pick`
+    ] as const;
+    }
+
+
+export const getGetCreativePickQueryOptions = <TData = Awaited<ReturnType<typeof getCreativePick>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCreativePick>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCreativePickQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCreativePick>>> = ({ signal }) => getCreativePick({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCreativePick>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCreativePickQueryResult = NonNullable<Awaited<ReturnType<typeof getCreativePick>>>
+export type GetCreativePickQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary AI-selected high-potential investment pick with analysis
+ */
+
+export function useGetCreativePick<TData = Awaited<ReturnType<typeof getCreativePick>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCreativePick>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCreativePickQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

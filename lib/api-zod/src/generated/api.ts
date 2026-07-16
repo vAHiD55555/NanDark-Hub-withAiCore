@@ -133,3 +133,91 @@ export const GetUserSegmentsResponseItem = zod.object({
 export const GetUserSegmentsResponse = zod.array(GetUserSegmentsResponseItem)
 
 
+/**
+ * @summary List all tracked financial instruments
+ */
+export const GetFinancialInstrumentsResponseItem = zod.object({
+  "id": zod.number(),
+  "symbol": zod.string(),
+  "name": zod.string(),
+  "nameFa": zod.string(),
+  "unit": zod.string(),
+  "category": zod.string(),
+  "description": zod.string().nullish(),
+  "isCreativePick": zod.number()
+})
+export const GetFinancialInstrumentsResponse = zod.array(GetFinancialInstrumentsResponseItem)
+
+
+/**
+ * @summary Current price + 24h/7d/30d change for all instruments
+ */
+export const GetFinancialSummaryResponseItem = zod.object({
+  "symbol": zod.string(),
+  "name": zod.string(),
+  "nameFa": zod.string(),
+  "unit": zod.string(),
+  "category": zod.string(),
+  "isCreativePick": zod.boolean(),
+  "price": zod.number(),
+  "change24h": zod.number(),
+  "change7d": zod.number(),
+  "change30d": zod.number(),
+  "high24h": zod.number(),
+  "low24h": zod.number()
+})
+export const GetFinancialSummaryResponse = zod.array(GetFinancialSummaryResponseItem)
+
+
+/**
+ * @summary Historical OHLC price data for a symbol
+ */
+export const GetFinancialPricesParams = zod.object({
+  "symbol": zod.coerce.string()
+})
+
+export const getFinancialPricesQueryPeriodDefault = `1y`;
+
+export const GetFinancialPricesQueryParams = zod.object({
+  "period": zod.enum(['7d', '30d', '90d', '1y']).default(getFinancialPricesQueryPeriodDefault)
+})
+
+export const GetFinancialPricesResponseItem = zod.object({
+  "date": zod.string(),
+  "open": zod.number(),
+  "high": zod.number(),
+  "low": zod.number(),
+  "close": zod.number(),
+  "changePct": zod.number(),
+  "normalizedPct": zod.number()
+})
+export const GetFinancialPricesResponse = zod.array(GetFinancialPricesResponseItem)
+
+
+/**
+ * @summary AI-selected high-potential investment pick with analysis
+ */
+export const GetCreativePickResponse = zod.object({
+  "symbol": zod.string(),
+  "name": zod.string(),
+  "nameFa": zod.string(),
+  "unit": zod.string(),
+  "price": zod.number(),
+  "change90d": zod.number(),
+  "potentialScore": zod.number(),
+  "thesis": zod.object({
+  "title": zod.string(),
+  "summary": zod.string(),
+  "catalysts": zod.array(zod.string()),
+  "risks": zod.array(zod.string()),
+  "targetPrice": zod.number(),
+  "horizon": zod.string()
+}),
+  "priceHistory": zod.array(zod.object({
+  "date": zod.string(),
+  "close": zod.number(),
+  "normalizedPct": zod.number()
+}))
+})
+
+

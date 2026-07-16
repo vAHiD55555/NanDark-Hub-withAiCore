@@ -77,6 +77,69 @@ export interface UserSegment {
   mrr: number;
 }
 
+export interface FinancialInstrument {
+  id: number;
+  symbol: string;
+  name: string;
+  nameFa: string;
+  unit: string;
+  category: string;
+  description?: string | null;
+  isCreativePick: number;
+}
+
+export interface FinancialSummaryItem {
+  symbol: string;
+  name: string;
+  nameFa: string;
+  unit: string;
+  category: string;
+  isCreativePick: boolean;
+  price: number;
+  change24h: number;
+  change7d: number;
+  change30d: number;
+  high24h: number;
+  low24h: number;
+}
+
+export interface PricePoint {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  changePct: number;
+  normalizedPct: number;
+}
+
+export interface CreativePickThesis {
+  title: string;
+  summary: string;
+  catalysts: string[];
+  risks: string[];
+  targetPrice: number;
+  horizon: string;
+}
+
+export interface CreativePickHistoryPoint {
+  date: string;
+  close: number;
+  normalizedPct: number;
+}
+
+export interface CreativePick {
+  symbol: string;
+  name: string;
+  nameFa: string;
+  unit: string;
+  price: number;
+  change90d: number;
+  potentialScore: number;
+  thesis: CreativePickThesis;
+  priceHistory: CreativePickHistoryPoint[];
+}
+
 export type GetUserGrowthParams = {
 period?: GetUserGrowthPeriod;
 };
@@ -125,5 +188,19 @@ export const GetMrrTrendPeriod = {
   '6m': '6m',
   '12m': '12m',
   '24m': '24m',
+} as const;
+
+export type GetFinancialPricesParams = {
+period?: GetFinancialPricesPeriod;
+};
+
+export type GetFinancialPricesPeriod = typeof GetFinancialPricesPeriod[keyof typeof GetFinancialPricesPeriod];
+
+
+export const GetFinancialPricesPeriod = {
+  '7d': '7d',
+  '30d': '30d',
+  '90d': '90d',
+  '1y': '1y',
 } as const;
 

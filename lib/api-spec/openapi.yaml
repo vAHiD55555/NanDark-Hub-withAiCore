@@ -154,6 +154,77 @@ paths:
                 items:
                   $ref: "#/components/schemas/UserSegment"
 
+  /financial/instruments:
+    get:
+      operationId: getFinancialInstruments
+      tags: [financial]
+      summary: List all tracked financial instruments
+      responses:
+        "200":
+          description: List of instruments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialInstrument"
+
+  /financial/summary:
+    get:
+      operationId: getFinancialSummary
+      tags: [financial]
+      summary: Current price + 24h/7d/30d change for all instruments
+      responses:
+        "200":
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialSummaryItem"
+
+  /financial/prices/{symbol}:
+    get:
+      operationId: getFinancialPrices
+      tags: [financial]
+      summary: Historical OHLC price data for a symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 1y
+      responses:
+        "200":
+          description: Price history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PricePoint"
+
+  /financial/creative-pick:
+    get:
+      operationId: getCreativePick
+      tags: [financial]
+      summary: AI-selected high-potential investment pick with analysis
+      responses:
+        "200":
+          description: Creative pick analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativePick"
+
 components:
   schemas:
     HealthStatus:
@@ -315,3 +386,130 @@ components:
           type: number
         mrr:
           type: number
+
+    FinancialInstrument:
+      type: object
+      required: [id, symbol, name, nameFa, unit, category, isCreativePick]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        nameFa:
+          type: string
+        unit:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isCreativePick:
+          type: integer
+
+    FinancialSummaryItem:
+      type: object
+      required: [symbol, name, nameFa, unit, category, isCreativePick, price, change24h, change7d, change30d, high24h, low24h]
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        nameFa:
+          type: string
+        unit:
+          type: string
+        category:
+          type: string
+        isCreativePick:
+          type: boolean
+        price:
+          type: number
+        change24h:
+          type: number
+        change7d:
+          type: number
+        change30d:
+          type: number
+        high24h:
+          type: number
+        low24h:
+          type: number
+
+    PricePoint:
+      type: object
+      required: [date, open, high, low, close, changePct, normalizedPct]
+      properties:
+        date:
+          type: string
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        changePct:
+          type: number
+        normalizedPct:
+          type: number
+
+    CreativePickThesis:
+      type: object
+      required: [title, summary, catalysts, risks, targetPrice, horizon]
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        catalysts:
+          type: array
+          items:
+            type: string
+        risks:
+          type: array
+          items:
+            type: string
+        targetPrice:
+          type: number
+        horizon:
+          type: string
+
+    CreativePickHistoryPoint:
+      type: object
+      required: [date, close, normalizedPct]
+      properties:
+        date:
+          type: string
+        close:
+          type: number
+        normalizedPct:
+          type: number
+
+    CreativePick:
+      type: object
+      required: [symbol, name, nameFa, unit, price, change90d, potentialScore, thesis, priceHistory]
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        nameFa:
+          type: string
+        unit:
+          type: string
+        price:
+          type: number
+        change90d:
+          type: number
+        potentialScore:
+          type: number
+        thesis:
+          $ref: "#/components/schemas/CreativePickThesis"
+        priceHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreativePickHistoryPoint"
