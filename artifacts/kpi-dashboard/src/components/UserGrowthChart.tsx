@@ -19,7 +19,7 @@ export function UserGrowthChart({ period }: UserGrowthChartProps) {
     return (
       <Card className="col-span-2">
         <CardHeader>
-          <CardTitle>User Growth</CardTitle>
+          <CardTitle>رشد کاربران</CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
@@ -31,7 +31,7 @@ export function UserGrowthChart({ period }: UserGrowthChartProps) {
   return (
     <Card className="col-span-2 bg-card/50 backdrop-blur-sm border-white/5">
       <CardHeader>
-        <CardTitle className="text-base font-medium tracking-tight">Active Users Trend</CardTitle>
+        <CardTitle className="text-base font-medium tracking-tight">روند کاربران فعال</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -60,7 +60,7 @@ export function UserGrowthChart({ period }: UserGrowthChartProps) {
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-mono)' }}
-                formatter={(value: number) => [formatNumber(value), 'Active Users']}
+                formatter={(value: number) => [formatNumber(value), 'کاربران فعال']}
               />
               <Area 
                 type="monotone" 

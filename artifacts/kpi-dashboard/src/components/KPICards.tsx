@@ -30,31 +30,31 @@ export function KPICards() {
 
   const kpis = [
     {
-      title: 'Total Active Users',
+      title: 'کل کاربران فعال',
       value: formatNumber(data.activeUsers),
       delta: data.totalUsersDelta,
-      deltaLabel: 'vs last month',
+      deltaLabel: 'نسبت به ماه قبل',
       inverseDelta: false,
     },
     {
-      title: 'Monthly Recurring Revenue',
+      title: 'درآمد ماهانه تکرارشونده',
       value: formatCurrency(data.mrr),
       delta: data.mrrDelta,
-      deltaLabel: 'vs last month',
+      deltaLabel: 'نسبت به ماه قبل',
       inverseDelta: false,
     },
     {
-      title: 'Monthly Churn Rate',
+      title: 'نرخ ریزش ماهانه',
       value: formatPercent(data.monthlyChurnRate),
       delta: data.churnRateDelta,
-      deltaLabel: 'vs last month',
-      inverseDelta: true, // Lower is better
+      deltaLabel: 'نسبت به ماه قبل',
+      inverseDelta: true,
     },
     {
-      title: 'Retention Rate',
+      title: 'نرخ نگهداشت',
       value: formatPercent(data.retentionRate),
       delta: data.retentionRateDelta,
-      deltaLabel: 'vs last month',
+      deltaLabel: 'نسبت به ماه قبل',
       inverseDelta: false,
     },
   ];

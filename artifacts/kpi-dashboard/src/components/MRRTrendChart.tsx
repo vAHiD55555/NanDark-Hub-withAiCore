@@ -19,7 +19,7 @@ export function MRRTrendChart({ period }: MRRTrendChartProps) {
     return (
       <Card className="col-span-2">
         <CardHeader>
-          <CardTitle>MRR Movement</CardTitle>
+          <CardTitle>تغییرات MRR</CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
@@ -31,7 +31,7 @@ export function MRRTrendChart({ period }: MRRTrendChartProps) {
   return (
     <Card className="col-span-2 bg-card/50 backdrop-blur-sm border-white/5">
       <CardHeader>
-        <CardTitle className="text-base font-medium tracking-tight">Net MRR Movement</CardTitle>
+        <CardTitle className="text-base font-medium tracking-tight">تغییرات خالص MRR</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -61,9 +61,9 @@ export function MRRTrendChart({ period }: MRRTrendChartProps) {
                 iconType="circle" 
                 wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} 
               />
-              <Bar dataKey="newMrr" name="New MRR" stackId="a" fill="hsl(var(--chart-4))" radius={[0, 0, 4, 4]} />
-              <Bar dataKey="expansionMrr" name="Expansion MRR" stackId="a" fill="hsl(var(--chart-1))" />
-              <Bar dataKey="churnedMrr" name="Churned MRR" stackId="a" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="newMrr" name="MRR جدید" stackId="a" fill="hsl(var(--chart-4))" radius={[0, 0, 4, 4]} />
+              <Bar dataKey="expansionMrr" name="MRR توسعه" stackId="a" fill="hsl(var(--chart-1))" />
+              <Bar dataKey="churnedMrr" name="MRR از دست رفته" stackId="a" fill="hsl(var(--chart-5))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

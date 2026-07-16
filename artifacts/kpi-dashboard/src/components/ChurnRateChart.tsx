@@ -19,7 +19,7 @@ export function ChurnRateChart({ period }: ChurnRateChartProps) {
     return (
       <Card className="col-span-1">
         <CardHeader>
-          <CardTitle>Churn Rate</CardTitle>
+          <CardTitle>نرخ ریزش</CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
@@ -31,7 +31,7 @@ export function ChurnRateChart({ period }: ChurnRateChartProps) {
   return (
     <Card className="col-span-1 bg-card/50 backdrop-blur-sm border-white/5">
       <CardHeader>
-        <CardTitle className="text-base font-medium tracking-tight">Monthly Churn Rate (%)</CardTitle>
+        <CardTitle className="text-base font-medium tracking-tight">نرخ ریزش ماهانه (%)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -54,7 +54,7 @@ export function ChurnRateChart({ period }: ChurnRateChartProps) {
               <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                 itemStyle={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-mono)' }}
-                formatter={(value: number) => [formatPercent(value), 'Churn Rate']}
+                formatter={(value: number) => [formatPercent(value), 'نرخ ریزش']}
               />
               <Line 
                 type="monotone" 

@@ -22,7 +22,7 @@ export function UserSegments() {
     return (
       <Card className="col-span-1">
         <CardHeader>
-          <CardTitle>User Segments</CardTitle>
+          <CardTitle>بخش‌های کاربری</CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
@@ -34,7 +34,7 @@ export function UserSegments() {
   return (
     <Card className="col-span-1 bg-card/50 backdrop-blur-sm border-white/5">
       <CardHeader>
-        <CardTitle className="text-base font-medium tracking-tight">Revenue by Segment</CardTitle>
+        <CardTitle className="text-base font-medium tracking-tight">درآمد بر اساس بخش</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-between">
         <div className="h-[180px] w-full mb-4">
@@ -73,7 +73,7 @@ export function UserSegments() {
                 />
                 <div>
                   <div className="font-medium text-sm leading-tight">{segment.plan}</div>
-                  <div className="text-xs text-muted-foreground">{segment.users} users ({formatPercent(segment.percentage)})</div>
+                  <div className="text-xs text-muted-foreground">{segment.users} کاربر ({formatPercent(segment.percentage)})</div>
                 </div>
               </div>
               <div className="font-mono text-sm font-semibold">

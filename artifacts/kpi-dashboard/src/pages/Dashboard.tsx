@@ -20,21 +20,21 @@ export default function Dashboard() {
             <div className="w-8 h-8 rounded bg-primary flex items-center justify-center font-bold text-primary-foreground tracking-tighter shadow-[0_0_15px_rgba(0,184,217,0.5)]">
               NX
             </div>
-            <span className="font-semibold text-lg tracking-tight">Nexus Analytics</span>
+            <span className="font-semibold text-lg tracking-tight">نکسوس آنالیتیکس</span>
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span>Timeframe:</span>
+              <span>بازه زمانی:</span>
               <Select value={period} onValueChange={(val) => setPeriod(val as GetUserGrowthPeriod)}>
-                <SelectTrigger className="w-[120px] h-8 bg-card/50 border-white/10">
-                  <SelectValue placeholder="Select period" />
+                <SelectTrigger className="w-[130px] h-8 bg-card/50 border-white/10">
+                  <SelectValue placeholder="انتخاب بازه" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3m">Last 3 Months</SelectItem>
-                  <SelectItem value="6m">Last 6 Months</SelectItem>
-                  <SelectItem value="12m">Last 12 Months</SelectItem>
-                  <SelectItem value="24m">Last 24 Months</SelectItem>
+                  <SelectItem value="3m">۳ ماه اخیر</SelectItem>
+                  <SelectItem value="6m">۶ ماه اخیر</SelectItem>
+                  <SelectItem value="12m">۱۲ ماه اخیر</SelectItem>
+                  <SelectItem value="24m">۲۴ ماه اخیر</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -45,8 +45,8 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
         <div className="flex flex-col space-y-2 mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-          <p className="text-muted-foreground">Your SaaS performance metrics at a glance.</p>
+          <h1 className="text-3xl font-bold tracking-tight">نمای کلی</h1>
+          <p className="text-muted-foreground">شاخص‌های عملکرد SaaS شما در یک نگاه.</p>
         </div>
 
         <KPICards />

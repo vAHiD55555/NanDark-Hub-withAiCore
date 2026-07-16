@@ -14,7 +14,7 @@ export function RetentionHeatmap() {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Retention Cohorts</CardTitle>
+          <CardTitle>کوهورت‌های نگهداشت</CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
@@ -38,15 +38,15 @@ export function RetentionHeatmap() {
   return (
     <Card className="w-full bg-card/50 backdrop-blur-sm border-white/5">
       <CardHeader>
-        <CardTitle className="text-base font-medium tracking-tight">Retention Cohorts (Last 6 Months)</CardTitle>
+        <CardTitle className="text-base font-medium tracking-tight">کوهورت‌های نگهداشت (۶ ماه اخیر)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
               <tr>
-                <th className="px-4 py-3 font-medium text-muted-foreground border-b border-border/50 w-32">Cohort</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground border-b border-border/50 text-right w-24">Users</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground border-b border-border/50 w-32">کوهورت</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground border-b border-border/50 text-right w-24">کاربران</th>
                 {[...Array(maxMonths)].map((_, i) => (
                   <th key={i} className="px-4 py-3 font-medium text-muted-foreground border-b border-border/50 text-center w-16">
                     M{i}
