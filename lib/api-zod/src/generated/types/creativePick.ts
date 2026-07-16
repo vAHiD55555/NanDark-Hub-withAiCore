@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreativePickHistoryPoint } from './creativePickHistoryPoint';
+import type { CreativePickScoreItem } from './creativePickScoreItem';
 import type { CreativePickThesis } from './creativePickThesis';
 
 export interface CreativePick {
@@ -16,6 +17,7 @@ export interface CreativePick {
   price: number;
   change90d: number;
   potentialScore: number;
+  allScores: CreativePickScoreItem[];
   thesis: CreativePickThesis;
   priceHistory: CreativePickHistoryPoint[];
 }

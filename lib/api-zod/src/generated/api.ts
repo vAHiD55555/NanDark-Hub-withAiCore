@@ -205,6 +205,11 @@ export const GetCreativePickResponse = zod.object({
   "price": zod.number(),
   "change90d": zod.number(),
   "potentialScore": zod.number(),
+  "allScores": zod.array(zod.object({
+  "symbol": zod.string(),
+  "nameFa": zod.string(),
+  "score": zod.number()
+})),
   "thesis": zod.object({
   "title": zod.string(),
   "summary": zod.string(),

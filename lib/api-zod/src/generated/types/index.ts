@@ -9,6 +9,7 @@
 export * from './churnPoint';
 export * from './creativePick';
 export * from './creativePickHistoryPoint';
+export * from './creativePickScoreItem';
 export * from './creativePickThesis';
 export * from './financialInstrument';
 export * from './financialSummaryItem';

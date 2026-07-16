@@ -128,6 +128,12 @@ export interface CreativePickHistoryPoint {
   normalizedPct: number;
 }
 
+export interface CreativePickScoreItem {
+  symbol: string;
+  nameFa: string;
+  score: number;
+}
+
 export interface CreativePick {
   symbol: string;
   name: string;
@@ -136,6 +142,7 @@ export interface CreativePick {
   price: number;
   change90d: number;
   potentialScore: number;
+  allScores: CreativePickScoreItem[];
   thesis: CreativePickThesis;
   priceHistory: CreativePickHistoryPoint[];
 }

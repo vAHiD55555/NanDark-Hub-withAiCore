@@ -489,9 +489,20 @@ components:
         normalizedPct:
           type: number
 
+    CreativePickScoreItem:
+      type: object
+      required: [symbol, nameFa, score]
+      properties:
+        symbol:
+          type: string
+        nameFa:
+          type: string
+        score:
+          type: number
+
     CreativePick:
       type: object
-      required: [symbol, name, nameFa, unit, price, change90d, potentialScore, thesis, priceHistory]
+      required: [symbol, name, nameFa, unit, price, change90d, potentialScore, thesis, priceHistory, allScores]
       properties:
         symbol:
           type: string
@@ -507,6 +518,10 @@ components:
           type: number
         potentialScore:
           type: number
+        allScores:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreativePickScoreItem"
         thesis:
           $ref: "#/components/schemas/CreativePickThesis"
         priceHistory:
