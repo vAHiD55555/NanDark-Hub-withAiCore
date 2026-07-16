@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SaaS KPI Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: metrics
+    description: SaaS KPI metrics
 paths:
   /healthz:
     get:
@@ -24,6 +26,134 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /metrics/summary:
+    get:
+      operationId: getMetricsSummary
+      tags: [metrics]
+      summary: Get high-level KPI summary
+      description: Returns current period summary stats - total users, churn rate, retention rate, MRR, and trends vs prior period
+      responses:
+        "200":
+          description: KPI summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricsSummary"
+
+  /metrics/user-growth:
+    get:
+      operationId: getUserGrowth
+      tags: [metrics]
+      summary: Get user growth over time
+      description: Returns monthly new users, churned users, and cumulative active users
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [3m, 6m, 12m, 24m]
+            default: 12m
+      responses:
+        "200":
+          description: User growth data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserGrowthPoint"
+
+  /metrics/churn:
+    get:
+      operationId: getChurnMetrics
+      tags: [metrics]
+      summary: Get churn rate over time
+      description: Returns monthly churn rate and churned user counts
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [3m, 6m, 12m, 24m]
+            default: 12m
+      responses:
+        "200":
+          description: Churn metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChurnPoint"
+
+  /metrics/retention:
+    get:
+      operationId: getRetentionCohorts
+      tags: [metrics]
+      summary: Get retention cohort data
+      description: Returns cohort-based retention rates for each month cohort across subsequent months
+      parameters:
+        - name: cohorts
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 3
+            maximum: 12
+            default: 6
+      responses:
+        "200":
+          description: Retention cohort table
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RetentionCohort"
+
+  /metrics/mrr:
+    get:
+      operationId: getMrrTrend
+      tags: [metrics]
+      summary: Get MRR trend over time
+      description: Returns monthly MRR, new MRR, expansion MRR, and churned MRR
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [3m, 6m, 12m, 24m]
+            default: 12m
+      responses:
+        "200":
+          description: MRR trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MrrPoint"
+
+  /metrics/segments:
+    get:
+      operationId: getUserSegments
+      tags: [metrics]
+      summary: Get user breakdown by plan/segment
+      description: Returns current user distribution across plan tiers
+      responses:
+        "200":
+          description: User segments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSegment"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +164,154 @@ components:
       required:
         - status
 
+    MetricsSummary:
+      type: object
+      required:
+        - totalUsers
+        - activeUsers
+        - monthlyChurnRate
+        - annualChurnRate
+        - retentionRate
+        - mrr
+        - arr
+        - newUsersThisMonth
+        - churnedUsersThisMonth
+        - totalUsersDelta
+        - mrrDelta
+        - churnRateDelta
+        - retentionRateDelta
+      properties:
+        totalUsers:
+          type: integer
+        activeUsers:
+          type: integer
+        monthlyChurnRate:
+          type: number
+          description: Monthly churn rate as a percentage (e.g. 2.5 = 2.5%)
+        annualChurnRate:
+          type: number
+          description: Annual churn rate as a percentage
+        retentionRate:
+          type: number
+          description: Monthly retention rate as a percentage
+        mrr:
+          type: number
+          description: Monthly Recurring Revenue in USD
+        arr:
+          type: number
+          description: Annual Recurring Revenue in USD
+        newUsersThisMonth:
+          type: integer
+        churnedUsersThisMonth:
+          type: integer
+        totalUsersDelta:
+          type: number
+          description: Percentage change vs prior month
+        mrrDelta:
+          type: number
+          description: Percentage change vs prior month
+        churnRateDelta:
+          type: number
+          description: Percentage point change vs prior month (negative is good)
+        retentionRateDelta:
+          type: number
+          description: Percentage point change vs prior month
+
+    UserGrowthPoint:
+      type: object
+      required:
+        - month
+        - newUsers
+        - churnedUsers
+        - netNewUsers
+        - cumulativeUsers
+      properties:
+        month:
+          type: string
+          description: Month label (e.g. "Jan 2025")
+        newUsers:
+          type: integer
+        churnedUsers:
+          type: integer
+        netNewUsers:
+          type: integer
+        cumulativeUsers:
+          type: integer
+
+    ChurnPoint:
+      type: object
+      required:
+        - month
+        - churnRate
+        - churnedUsers
+        - atRiskUsers
+      properties:
+        month:
+          type: string
+        churnRate:
+          type: number
+          description: Churn rate percentage for the month
+        churnedUsers:
+          type: integer
+        atRiskUsers:
+          type: integer
+          description: Users flagged as at-risk of churning
+
+    RetentionCohort:
+      type: object
+      required:
+        - cohortMonth
+        - cohortSize
+        - retention
+      properties:
+        cohortMonth:
+          type: string
+          description: Cohort start month label (e.g. "Jan 2025")
+        cohortSize:
+          type: integer
+          description: Number of users who joined in this cohort
+        retention:
+          type: array
+          description: Retention rate at month 0, 1, 2, ... (100 = all retained)
+          items:
+            type: ["number", "null"]
+
+    MrrPoint:
+      type: object
+      required:
+        - month
+        - mrr
+        - newMrr
+        - expansionMrr
+        - churnedMrr
+        - netNewMrr
+      properties:
+        month:
+          type: string
+        mrr:
+          type: number
+        newMrr:
+          type: number
+        expansionMrr:
+          type: number
+        churnedMrr:
+          type: number
+        netNewMrr:
+          type: number
+
+    UserSegment:
+      type: object
+      required:
+        - plan
+        - users
+        - percentage
+        - mrr
+      properties:
+        plan:
+          type: string
+        users:
+          type: integer
+        percentage:
+          type: number
+        mrr:
+          type: number
