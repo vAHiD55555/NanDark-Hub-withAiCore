@@ -6,21 +6,22 @@ import {
 } from 'recharts';
 import type { FinancialPeriod } from '../pages/Dashboard';
 
-interface Props {
-  period: FinancialPeriod;
-}
+interface Props { period: FinancialPeriod; }
 
 const SYMBOLS = [
-  { key: 'BTC', nameFa: 'بیت‌کوین', color: '#f59e0b' },
-  { key: 'ETH', nameFa: 'اتریوم', color: '#818cf8' },
-  { key: 'GOLD', nameFa: 'طلا', color: '#fcd34d' },
-  { key: 'DXY', nameFa: 'شاخص دلار', color: '#38bdf8' },
-  { key: 'COPPER', nameFa: 'مس', color: '#fb923c' },
+  { key: 'BTC',    nameFa: 'بیت‌کوین',   color: '#f59e0b' },
+  { key: 'ETH',    nameFa: 'اتریوم',     color: '#818cf8' },
+  { key: 'GOLD',   nameFa: 'طلا',        color: '#fcd34d' },
+  { key: 'SILVER', nameFa: 'نقره',       color: '#cbd5e1' },
+  { key: 'DXY',    nameFa: 'شاخص دلار', color: '#38bdf8' },
+  { key: 'COPPER', nameFa: 'مس',         color: '#fb923c' },
 ];
+
+const REFETCH = { query: { refetchInterval: 120_000 } } as const;
 
 function computeWeeklyVolatility(
   data: { date: string; changePct: number }[]
-): { week: string; [sym: string]: number | string }[] {
+): { week: string; vol: number }[] {
   const weeks = new Map<string, number[]>();
   for (const row of data) {
     const d = new Date(row.date);
@@ -30,7 +31,6 @@ function computeWeeklyVolatility(
     if (!weeks.has(key)) weeks.set(key, []);
     weeks.get(key)!.push(row.changePct);
   }
-
   return Array.from(weeks.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-16)
@@ -58,34 +58,31 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function VolatilityChart({ period }: Props) {
-  const btc = useGetFinancialPrices('BTC', { period });
-  const eth = useGetFinancialPrices('ETH', { period });
-  const gold = useGetFinancialPrices('GOLD', { period });
-  const dxy = useGetFinancialPrices('DXY', { period });
-  const copper = useGetFinancialPrices('COPPER', { period });
-
-  const isLoading = btc.isLoading;
+  const btc    = useGetFinancialPrices('BTC',    { period }, REFETCH);
+  const eth    = useGetFinancialPrices('ETH',    { period }, REFETCH);
+  const gold   = useGetFinancialPrices('GOLD',   { period }, REFETCH);
+  const silver = useGetFinancialPrices('SILVER', { period }, REFETCH);
+  const dxy    = useGetFinancialPrices('DXY',    { period }, REFETCH);
+  const copper = useGetFinancialPrices('COPPER', { period }, REFETCH);
 
   const merged = React.useMemo(() => {
     const datasets: Record<string, { date: string; changePct: number }[]> = {
-      BTC: btc.data ?? [],
-      ETH: eth.data ?? [],
-      GOLD: gold.data ?? [],
-      DXY: dxy.data ?? [],
+      BTC:    btc.data    ?? [],
+      ETH:    eth.data    ?? [],
+      GOLD:   gold.data   ?? [],
+      SILVER: silver.data ?? [],
+      DXY:    dxy.data    ?? [],
       COPPER: copper.data ?? [],
     };
 
-    const allWeekly: Record<string, number>[] = [];
     const weekKeys = new Set<string>();
-
     const computed: Record<string, { week: string; vol: number }[]> = {};
     for (const [sym, rows] of Object.entries(datasets)) {
       computed[sym] = computeWeeklyVolatility(rows);
       computed[sym].forEach(w => weekKeys.add(w.week));
     }
 
-    const sorted = Array.from(weekKeys).sort();
-    return sorted.map(week => {
+    return Array.from(weekKeys).sort().map(week => {
       const row: Record<string, number | string> = { week };
       for (const sym of Object.keys(datasets)) {
         const found = computed[sym]?.find(w => w.week === week);
@@ -93,9 +90,9 @@ export function VolatilityChart({ period }: Props) {
       }
       return row;
     });
-  }, [btc.data, eth.data, gold.data, dxy.data, copper.data]);
+  }, [btc.data, eth.data, gold.data, silver.data, dxy.data, copper.data]);
 
-  if (isLoading) return <Card className="bg-card/50 border-white/10 h-64 animate-pulse" />;
+  if (btc.isLoading) return <Card className="bg-card/50 border-white/10 h-64 animate-pulse" />;
 
   return (
     <Card className="bg-card/50 border-white/10">
@@ -105,7 +102,7 @@ export function VolatilityChart({ period }: Props) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={merged} margin={{ top: 5, right: 5, left: -15, bottom: 5 }} barSize={4} barCategoryGap="30%">
+          <BarChart data={merged} margin={{ top: 5, right: 5, left: -15, bottom: 5 }} barSize={3} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis dataKey="week" tick={{ fontSize: 9, fill: '#6b7280' }} tickLine={false} interval={1} />
             <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />

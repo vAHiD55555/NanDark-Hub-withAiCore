@@ -2,15 +2,22 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { financialInstrumentsTable, financialPriceHistoryTable } from "@workspace/db";
 import { desc, eq, gte, and } from "drizzle-orm";
+import {
+  fetchYahooHistory,
+  buildLiveSummary,
+  type OhlcPoint,
+} from "../services/marketData";
 
 const financialRouter = Router();
 
+const SYMBOLS = ["BTC", "ETH", "GOLD", "DXY", "COPPER"] as const;
+
 function periodToDays(period: string | undefined): number {
   switch (period) {
-    case "7d": return 7;
+    case "7d":  return 7;
     case "30d": return 30;
     case "90d": return 90;
-    default: return 365;
+    default:    return 365;
   }
 }
 
@@ -18,6 +25,37 @@ function cutoffDate(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toISOString().substring(0, 10);
+}
+
+// ── DB fallback helpers ────────────────────────────────────────────────────
+
+async function dbHistory(symbol: string, days: number): Promise<OhlcPoint[]> {
+  const rows = await db
+    .select()
+    .from(financialPriceHistoryTable)
+    .where(
+      and(
+        eq(financialPriceHistoryTable.symbol, symbol),
+        gte(financialPriceHistoryTable.date, cutoffDate(days))
+      )
+    )
+    .orderBy(financialPriceHistoryTable.date);
+
+  if (rows.length === 0) return [];
+  const base = parseFloat(rows[0].close as string);
+
+  return rows.map((r) => {
+    const close = parseFloat(r.close as string);
+    return {
+      date:          r.date,
+      open:          parseFloat(r.open as string),
+      high:          parseFloat(r.high as string),
+      low:           parseFloat(r.low as string),
+      close,
+      changePct:     parseFloat(r.changePct as string),
+      normalizedPct: parseFloat((((close - base) / base) * 100).toFixed(3)),
+    };
+  });
 }
 
 // GET /api/financial/instruments
@@ -29,13 +67,27 @@ financialRouter.get("/financial/instruments", async (_req, res) => {
   res.json(rows);
 });
 
-// GET /api/financial/summary
+// GET /api/financial/summary  — live prices with DB fallback
 financialRouter.get("/financial/summary", async (_req, res) => {
   const instruments = await db.select().from(financialInstrumentsTable);
 
   const results = await Promise.all(
     instruments.map(async (inst) => {
-      // Latest 2 days for change calculation
+      // Try live data first
+      const live = await buildLiveSummary(inst.symbol);
+      if (live) {
+        return {
+          ...live,
+          name:         inst.name,
+          nameFa:       inst.nameFa,
+          unit:         inst.unit,
+          category:     inst.category,
+          isCreativePick: inst.isCreativePick === 1,
+          source:       "live" as const,
+        };
+      }
+
+      // DB fallback
       const latest = await db
         .select()
         .from(financialPriceHistoryTable)
@@ -44,59 +96,26 @@ financialRouter.get("/financial/summary", async (_req, res) => {
         .limit(2);
 
       const current = latest[0];
-      const prev = latest[1];
-
+      const prev    = latest[1];
       if (!current) return null;
 
-      const close = parseFloat(current.close as string);
+      const close    = parseFloat(current.close as string);
       const prevClose = prev ? parseFloat(prev.close as string) : close;
-      const change24h = ((close - prevClose) / prevClose) * 100;
-
-      // 7-day and 30-day change
-      const week = await db
-        .select()
-        .from(financialPriceHistoryTable)
-        .where(
-          and(
-            eq(financialPriceHistoryTable.symbol, inst.symbol),
-            gte(financialPriceHistoryTable.date, cutoffDate(8))
-          )
-        )
-        .orderBy(financialPriceHistoryTable.date)
-        .limit(1);
-
-      const month = await db
-        .select()
-        .from(financialPriceHistoryTable)
-        .where(
-          and(
-            eq(financialPriceHistoryTable.symbol, inst.symbol),
-            gte(financialPriceHistoryTable.date, cutoffDate(32))
-          )
-        )
-        .orderBy(financialPriceHistoryTable.date)
-        .limit(1);
-
-      const change7d = week[0]
-        ? ((close - parseFloat(week[0].close as string)) / parseFloat(week[0].close as string)) * 100
-        : 0;
-      const change30d = month[0]
-        ? ((close - parseFloat(month[0].close as string)) / parseFloat(month[0].close as string)) * 100
-        : 0;
 
       return {
-        symbol: inst.symbol,
-        name: inst.name,
-        nameFa: inst.nameFa,
-        unit: inst.unit,
-        category: inst.category,
+        symbol:        inst.symbol,
+        name:          inst.name,
+        nameFa:        inst.nameFa,
+        unit:          inst.unit,
+        category:      inst.category,
         isCreativePick: inst.isCreativePick === 1,
-        price: parseFloat(close.toFixed(4)),
-        change24h: parseFloat(change24h.toFixed(2)),
-        change7d: parseFloat(change7d.toFixed(2)),
-        change30d: parseFloat(change30d.toFixed(2)),
-        high24h: parseFloat((current.high as string)),
-        low24h: parseFloat((current.low as string)),
+        price:         close,
+        change24h:     ((close - prevClose) / prevClose) * 100,
+        change7d:      0,
+        change30d:     0,
+        high24h:       parseFloat(current.high as string),
+        low24h:        parseFloat(current.low as string),
+        source:        "fallback" as const,
       };
     })
   );
@@ -104,44 +123,29 @@ financialRouter.get("/financial/summary", async (_req, res) => {
   res.json(results.filter(Boolean));
 });
 
-// GET /api/financial/prices/:symbol
+// GET /api/financial/prices/:symbol  — live OHLC with DB fallback
 financialRouter.get("/financial/prices/:symbol", async (req, res) => {
-  const { symbol } = req.params;
-  const days = periodToDays(req.query.period as string | undefined);
-  const cutoff = cutoffDate(days);
+  const symbol = req.params.symbol.toUpperCase();
+  const days   = periodToDays(req.query.period as string | undefined);
 
-  const rows = await db
-    .select()
-    .from(financialPriceHistoryTable)
-    .where(
-      and(
-        eq(financialPriceHistoryTable.symbol, symbol.toUpperCase()),
-        gte(financialPriceHistoryTable.date, cutoff)
-      )
-    )
-    .orderBy(financialPriceHistoryTable.date);
-
-  if (rows.length === 0) {
-    res.status(404).json({ error: "No data found for symbol" });
+  // Try Yahoo Finance
+  const live = await fetchYahooHistory(symbol, days);
+  if (live && live.length > 0) {
+    res.json(live);
     return;
   }
 
-  const basePrice = parseFloat(rows[0].close as string);
-
-  const result = rows.map((r) => ({
-    date: r.date,
-    open: parseFloat(r.open as string),
-    high: parseFloat(r.high as string),
-    low: parseFloat(r.low as string),
-    close: parseFloat(r.close as string),
-    changePct: parseFloat(r.changePct as string),
-    normalizedPct: ((parseFloat(r.close as string) - basePrice) / basePrice) * 100,
-  }));
-
-  res.json(result);
+  // DB fallback
+  const fallback = await dbHistory(symbol, days);
+  if (fallback.length === 0) {
+    res.status(404).json({ error: "No data found for symbol" });
+    return;
+  }
+  res.json(fallback);
 });
 
-// Static theses per instrument (used after dynamic scoring picks the winner)
+// ── Creative pick scoring ──────────────────────────────────────────────────
+
 const THESES: Record<string, {
   title: string;
   summary: string;
@@ -185,7 +189,7 @@ const THESES: Record<string, {
     horizon: "۶-۹ ماه",
   },
   GOLD: {
-    title: "پناهگاه امن در嵐 嵐بازارهای پرتلاطم",
+    title: "پناهگاه امن در بازارهای پرتلاطم",
     summary:
       "طلا در شرایط تنش ژئوپلیتیک، نرخ بهره بالا و کاهش اعتماد به ارزهای فیات، مجدداً نقش تاریخی خود را بازیافته است.",
     catalysts: [
@@ -217,6 +221,23 @@ const THESES: Record<string, {
     targetMultiplier: 1.05,
     horizon: "۳-۶ ماه",
   },
+  SILVER: {
+    title: "فلز صنعتی و پناهگاه امن",
+    summary:
+      "نقره در تقاطع دو دنیاست: هم فلز گران‌بها برای ذخیره ارزش، هم فلز صنعتی کلیدی برای پنل‌های خورشیدی، الکترونیک و صنعت پزشکی.",
+    catalysts: [
+      "بزرگ‌ترین مصرف نقره پنل‌های خورشیدی است که رشد انفجاری دارند",
+      "نسبت طلا به نقره (Gold/Silver Ratio) بالاتر از میانگین تاریخی، نقره را undervalued نشان می‌دهد",
+      "کاربرد گسترده در الکترونیک، کاتالیست‌های خودرو، و تجهیزات پزشکی",
+      "ذخایر معادن نقره در کاهش است و عرضه جدید محدود می‌ماند",
+    ],
+    risks: [
+      "رکود صنعتی جهانی می‌تواند تقاضای نقره را به شدت کاهش دهد",
+      "نوسان بیشتر از طلا ریسک کوتاه‌مدت را افزایش می‌دهد",
+    ],
+    targetMultiplier: 1.25,
+    horizon: "۶-۱۲ ماه",
+  },
   COPPER: {
     title: "انقلاب انرژی، کلید مس",
     summary:
@@ -236,114 +257,92 @@ const THESES: Record<string, {
   },
 };
 
-// Score one symbol from its last 90 days of data
-function scoreInstrument(rows: { close: string; changePct: string; date: string }[]): number {
+function scoreInstrument(rows: OhlcPoint[]): number {
   if (rows.length < 10) return 0;
 
-  const closes = rows.map((r) => parseFloat(r.close as string));
-  const changes = rows.map((r) => parseFloat(r.changePct as string));
+  const closes  = rows.map((r) => r.close);
+  const changes = rows.map((r) => r.changePct);
 
-  // 1. 30-day momentum (last 30 rows vs 30 rows before that)
-  const recent = closes.slice(-30);
-  const prior = closes.slice(-60, -30);
-  const momentum30 = prior.length > 0
-    ? ((recent[recent.length - 1] - prior[0]) / prior[0]) * 100
+  const recent30 = closes.slice(-30);
+  const prior30  = closes.slice(-60, -30);
+  const momentum30 = prior30.length > 0
+    ? ((recent30[recent30.length - 1] - prior30[0]) / prior30[0]) * 100
     : 0;
 
-  // 2. 90-day total return
   const momentum90 = ((closes[closes.length - 1] - closes[0]) / closes[0]) * 100;
 
-  // 3. Trend consistency: % of days with positive change in last 30
   const recentChanges = changes.slice(-30);
-  const positiveDays = recentChanges.filter((c) => c > 0).length;
-  const consistency = (positiveDays / recentChanges.length) * 100;
+  const positiveDays  = recentChanges.filter((c) => c > 0).length;
+  const consistency   = (positiveDays / Math.max(recentChanges.length, 1)) * 100;
 
-  // 4. Risk-adjusted: momentum30 / volatility
-  const mean = recentChanges.reduce((a, b) => a + b, 0) / recentChanges.length;
-  const variance = recentChanges.reduce((s, c) => s + (c - mean) ** 2, 0) / recentChanges.length;
-  const vol = Math.sqrt(variance);
-  const sharpe = vol > 0 ? momentum30 / vol : 0;
+  const mean     = recentChanges.reduce((a, b) => a + b, 0) / Math.max(recentChanges.length, 1);
+  const variance = recentChanges.reduce((s, c) => s + (c - mean) ** 2, 0) / Math.max(recentChanges.length, 1);
+  const vol      = Math.sqrt(variance);
+  const sharpe   = vol > 0 ? momentum30 / vol : 0;
 
-  // 5. Small time-based noise so the winner can rotate on refresh
-  //    Uses current minute to shift scores by a tiny fraction
+  // Small time-based jitter so result can shift on refresh
   const minuteNoise = (new Date().getMinutes() % 7) * 0.4;
 
-  // Weighted composite score (0-100 range)
-  const score =
-    momentum30 * 1.5 +
-    momentum90 * 0.8 +
-    consistency * 0.6 +
-    sharpe * 2.0 +
-    minuteNoise;
-
-  return score;
+  return momentum30 * 1.5 + momentum90 * 0.8 + consistency * 0.6 + sharpe * 2.0 + minuteNoise;
 }
 
 // GET /api/financial/creative-pick
 financialRouter.get("/financial/creative-pick", async (_req, res) => {
   const instruments = await db.select().from(financialInstrumentsTable);
 
-  // Fetch 90 days of data for every instrument and score them
   const scored = await Promise.all(
     instruments.map(async (inst) => {
-      const rows = await db
-        .select()
-        .from(financialPriceHistoryTable)
-        .where(
-          and(
-            eq(financialPriceHistoryTable.symbol, inst.symbol),
-            gte(financialPriceHistoryTable.date, cutoffDate(90))
-          )
-        )
-        .orderBy(financialPriceHistoryTable.date);
+      // Try live 90-day history first, fall back to DB
+      let rows: OhlcPoint[] = (await fetchYahooHistory(inst.symbol, 90)) ?? [];
+      if (rows.length === 0) rows = await dbHistory(inst.symbol, 90);
 
-      const rawScore = scoreInstrument(rows);
-      // Clamp to 55-97 range for display
+      const rawScore     = scoreInstrument(rows);
       const potentialScore = Math.min(97, Math.max(55, Math.round(rawScore + 68)));
-
       return { inst, rows, potentialScore };
     })
   );
 
-  // Pick the highest-scoring instrument
   scored.sort((a, b) => b.potentialScore - a.potentialScore);
   const { inst, rows, potentialScore } = scored[0];
 
-  const oldest = rows[0];
-  const latest = rows[rows.length - 1];
-  const price = latest ? parseFloat(latest.close as string) : 0;
-  const priceStart = oldest ? parseFloat(oldest.close as string) : price;
-  const change90d = priceStart > 0 ? ((price - priceStart) / priceStart) * 100 : 0;
+  const oldest    = rows[0];
+  const latest    = rows[rows.length - 1];
+  const price     = latest?.close ?? 0;
+  const priceStart = oldest?.close ?? price;
+  const change90d  = priceStart > 0 ? ((price - priceStart) / priceStart) * 100 : 0;
+
+  // Use live current price if available (more accurate than last OHLC close)
+  const liveSummary = await buildLiveSummary(inst.symbol);
+  const livePrice   = liveSummary?.price ?? price;
 
   const thesis = THESES[inst.symbol] ?? THESES["COPPER"];
 
   res.json({
-    symbol: inst.symbol,
-    name: inst.name,
-    nameFa: inst.nameFa,
-    unit: inst.unit,
-    price: parseFloat(price.toFixed(4)),
-    change90d: parseFloat(change90d.toFixed(2)),
+    symbol:         inst.symbol,
+    name:           inst.name,
+    nameFa:         inst.nameFa,
+    unit:           inst.unit,
+    price:          parseFloat(livePrice.toFixed(4)),
+    change90d:      parseFloat(change90d.toFixed(2)),
     potentialScore,
+    dataSource:     rows.length > 0 ? "live" : "seed",
     allScores: scored.map((s) => ({
       symbol: s.inst.symbol,
       nameFa: s.inst.nameFa,
-      score: s.potentialScore,
+      score:  s.potentialScore,
     })),
     thesis: {
-      title: thesis.title,
-      summary: thesis.summary,
-      catalysts: thesis.catalysts,
-      risks: thesis.risks,
-      targetPrice: parseFloat((price * thesis.targetMultiplier).toFixed(4)),
-      horizon: thesis.horizon,
+      title:       thesis.title,
+      summary:     thesis.summary,
+      catalysts:   thesis.catalysts,
+      risks:       thesis.risks,
+      targetPrice: parseFloat((livePrice * thesis.targetMultiplier).toFixed(4)),
+      horizon:     thesis.horizon,
     },
     priceHistory: rows.map((r) => ({
-      date: r.date,
-      close: parseFloat(r.close as string),
-      normalizedPct: parseFloat(
-        (((parseFloat(r.close as string) - priceStart) / priceStart) * 100).toFixed(3)
-      ),
+      date:          r.date,
+      close:         r.close,
+      normalizedPct: r.normalizedPct,
     })),
   });
 });

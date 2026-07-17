@@ -74,10 +74,22 @@ const INSTRUMENTS: InstrumentConfig[] = [
     unit: "USD/lb",
     category: "commodity",
     description: "Copper Spot / US Dollar per pound — AI & EV revolution pick",
-    isCreativePick: 1,
+    isCreativePick: 0,
     startPrice: 4.15,
     dailyDrift: 0.045,
     volatility: 1.4,
+  },
+  {
+    symbol: "SILVER",
+    name: "Silver",
+    nameFa: "نقره",
+    unit: "USD/oz",
+    category: "commodity",
+    description: "Silver Futures / US Dollar per troy ounce",
+    isCreativePick: 0,
+    startPrice: 26.5,
+    dailyDrift: 0.04,
+    volatility: 1.5,
   },
 ];
 

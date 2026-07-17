@@ -7,15 +7,31 @@ import {
 } from 'recharts';
 
 const SYMBOL_COLORS: Record<string, string> = {
-  BTC: '#f59e0b',
-  ETH: '#818cf8',
-  GOLD: '#fcd34d',
-  DXY: '#38bdf8',
+  BTC:    '#f59e0b',
+  ETH:    '#818cf8',
+  GOLD:   '#fcd34d',
+  SILVER: '#cbd5e1',
+  DXY:    '#38bdf8',
   COPPER: '#fb923c',
 };
 
+function formatPanelPrice(price: number, unit: string): string {
+  if (unit === 'USD') {
+    if (price >= 1000) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    return `$${price.toFixed(2)}`;
+  }
+  if (unit === 'USD/oz') {
+    if (price >= 500) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    return `$${price.toFixed(2)}`;
+  }
+  if (unit === 'USD/lb') return `$${price.toFixed(3)}`;
+  return price.toFixed(2);
+}
+
 export function CreativePickPanel() {
-  const { data, isLoading, refetch, isFetching } = useGetCreativePick();
+  const { data, isLoading, refetch, isFetching } = useGetCreativePick({
+    query: { refetchInterval: 30_000 },
+  });
 
   if (isLoading) return <Card className="bg-card/50 border-white/10 h-full min-h-96 animate-pulse" />;
   if (!data) return null;
@@ -32,7 +48,6 @@ export function CreativePickPanel() {
     data.potentialScore >= 85 ? 'text-emerald-400' :
     data.potentialScore >= 70 ? 'text-amber-400' : 'text-rose-400';
 
-  // Sort allScores descending for display
   const sortedScores = [...(data.allScores ?? [])].sort((a, b) => b.score - a.score);
   const maxScore = sortedScores[0]?.score ?? 100;
 
@@ -67,9 +82,7 @@ export function CreativePickPanel() {
           </div>
           <div className="text-left">
             <p className="text-xl font-bold tabular-nums">
-              {data.unit === 'USD' || data.unit === 'USD/oz'
-                ? `$${data.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-                : `$${data.price.toFixed(3)}`}
+              {formatPanelPrice(data.price, data.unit)}
             </p>
             <p className={`text-xs flex items-center gap-1 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
               <TrendingUp size={11} />
@@ -78,7 +91,7 @@ export function CreativePickPanel() {
           </div>
         </div>
 
-        {/* Score Competition — all instruments ranked */}
+        {/* Score Competition */}
         <div className="bg-black/20 rounded-lg p-3 space-y-2">
           <p className="text-xs text-muted-foreground mb-3">رقابت امتیازها — این لحظه</p>
           {sortedScores.map((s, idx) => {
@@ -178,9 +191,7 @@ export function CreativePickPanel() {
           </div>
           <div className="text-left">
             <span className="text-sm font-bold" style={{ color: pickColor }}>
-              {data.unit === 'USD' || data.unit === 'USD/oz'
-                ? `$${data.thesis.targetPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-                : `$${data.thesis.targetPrice.toFixed(3)}`}
+              {formatPanelPrice(data.thesis.targetPrice, data.unit)}
             </span>
             <span className="text-xs text-muted-foreground mr-2">· {data.thesis.horizon}</span>
           </div>

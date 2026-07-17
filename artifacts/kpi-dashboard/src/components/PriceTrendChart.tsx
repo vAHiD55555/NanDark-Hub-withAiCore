@@ -7,24 +7,26 @@ import {
 import type { FinancialPeriod } from '../pages/Dashboard';
 
 const SYMBOLS = [
-  { key: 'BTC', nameFa: 'بیت‌کوین', color: '#f59e0b' },
-  { key: 'ETH', nameFa: 'اتریوم', color: '#818cf8' },
-  { key: 'GOLD', nameFa: 'طلا', color: '#fcd34d' },
-  { key: 'DXY', nameFa: 'شاخص دلار', color: '#38bdf8' },
-  { key: 'COPPER', nameFa: 'مس', color: '#fb923c' },
+  { key: 'BTC',    nameFa: 'بیت‌کوین',   color: '#f59e0b' },
+  { key: 'ETH',    nameFa: 'اتریوم',     color: '#818cf8' },
+  { key: 'GOLD',   nameFa: 'طلا',        color: '#fcd34d' },
+  { key: 'SILVER', nameFa: 'نقره',       color: '#cbd5e1' },
+  { key: 'DXY',    nameFa: 'شاخص دلار', color: '#38bdf8' },
+  { key: 'COPPER', nameFa: 'مس',         color: '#fb923c' },
 ];
 
-interface Props {
-  period: FinancialPeriod;
-}
+interface Props { period: FinancialPeriod; }
+
+const REFETCH = { query: { refetchInterval: 120_000 } } as const;
 
 function useAllPrices(period: FinancialPeriod) {
-  const btc = useGetFinancialPrices('BTC', { period });
-  const eth = useGetFinancialPrices('ETH', { period });
-  const gold = useGetFinancialPrices('GOLD', { period });
-  const dxy = useGetFinancialPrices('DXY', { period });
-  const copper = useGetFinancialPrices('COPPER', { period });
-  return { btc, eth, gold, dxy, copper };
+  const btc    = useGetFinancialPrices('BTC',    { period }, REFETCH);
+  const eth    = useGetFinancialPrices('ETH',    { period }, REFETCH);
+  const gold   = useGetFinancialPrices('GOLD',   { period }, REFETCH);
+  const silver = useGetFinancialPrices('SILVER', { period }, REFETCH);
+  const dxy    = useGetFinancialPrices('DXY',    { period }, REFETCH);
+  const copper = useGetFinancialPrices('COPPER', { period }, REFETCH);
+  return { btc, eth, gold, silver, dxy, copper };
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -46,19 +48,19 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function PriceTrendChart({ period }: Props) {
-  const { btc, eth, gold, dxy, copper } = useAllPrices(period);
+  const { btc, eth, gold, silver, dxy, copper } = useAllPrices(period);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
 
   const isLoading = btc.isLoading || eth.isLoading;
 
-  // Merge all data by date
   const merged = React.useMemo(() => {
     const byDate = new Map<string, Record<string, number>>();
     const datasets: Record<string, { date: string; normalizedPct: number }[]> = {
-      BTC: btc.data ?? [],
-      ETH: eth.data ?? [],
-      GOLD: gold.data ?? [],
-      DXY: dxy.data ?? [],
+      BTC:    btc.data    ?? [],
+      ETH:    eth.data    ?? [],
+      GOLD:   gold.data   ?? [],
+      SILVER: silver.data ?? [],
+      DXY:    dxy.data    ?? [],
       COPPER: copper.data ?? [],
     };
 
@@ -72,15 +74,10 @@ export function PriceTrendChart({ period }: Props) {
     return Array.from(byDate.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, vals]) => ({ date: date.substring(5), ...vals }));
-  }, [btc.data, eth.data, gold.data, dxy.data, copper.data]);
+  }, [btc.data, eth.data, gold.data, silver.data, dxy.data, copper.data]);
 
-  const toggle = (key: string) => {
-    setHidden(prev => {
-      const n = new Set(prev);
-      n.has(key) ? n.delete(key) : n.add(key);
-      return n;
-    });
-  };
+  const toggle = (key: string) =>
+    setHidden(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   if (isLoading) return <Card className="bg-card/50 border-white/10 h-96 animate-pulse" />;
 
@@ -91,7 +88,6 @@ export function PriceTrendChart({ period }: Props) {
         <p className="text-xs text-muted-foreground">مقایسه عملکرد همه شاخص‌ها در یک نمودار</p>
       </CardHeader>
       <CardContent>
-        {/* Legend toggles */}
         <div className="flex flex-wrap gap-3 mb-4">
           {SYMBOLS.map(s => (
             <button

@@ -137,3 +137,35 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* ── Live price flash animations ─────────────────────────────────────────── */
+
+@keyframes card-flash-up {
+  0%   { box-shadow: 0 0 0 1px rgba(16,185,129,0.9), 0 0 24px rgba(16,185,129,0.4); }
+  60%  { box-shadow: 0 0 0 1px rgba(16,185,129,0.5), 0 0 16px rgba(16,185,129,0.2); }
+  100% { box-shadow: none; }
+}
+
+@keyframes card-flash-down {
+  0%   { box-shadow: 0 0 0 1px rgba(239,68,68,0.9), 0 0 24px rgba(239,68,68,0.4); }
+  60%  { box-shadow: 0 0 0 1px rgba(239,68,68,0.5), 0 0 16px rgba(239,68,68,0.2); }
+  100% { box-shadow: none; }
+}
+
+@keyframes price-pop-up {
+  0%   { color: #10b981; transform: scale(1.06); }
+  50%  { color: #34d399; }
+  100% { color: inherit; transform: scale(1); }
+}
+
+@keyframes price-pop-down {
+  0%   { color: #ef4444; transform: scale(1.06); }
+  50%  { color: #f87171; }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.card-flash-up   { animation: card-flash-up   0.9s ease-out forwards; }
+.card-flash-down { animation: card-flash-down 0.9s ease-out forwards; }
+
+.price-flash-up   { animation: price-pop-up   0.8s ease-out forwards; }
+.price-flash-down { animation: price-pop-down 0.8s ease-out forwards; }
